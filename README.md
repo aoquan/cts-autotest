@@ -8,12 +8,15 @@
 1. 运行脚本需要指定android-x86的ip地址和端口号
 1. autoTest.sh脚本与cts-tradefed脚本需要放在同一个目录下面
 1. 目前autoTest.sh会自动测试默认的plan(CTS)
+1. 测试举例：./autoTest.sh 192.168.2.51:5555
 
 ##在模拟器中测试
 1. 模拟器（qemu）中的测试方法与真机上一致，但模拟器中需要设置qemu的桥接模式
-1. 运行qemu的命令为：（非安装,使用iso）
+1. 运行qemu的命令为（非安装,使用iso）:
+
 `./qemu-system-x86_64 -m 4G --enable-kvm -net nic,vlan=0 -net tap,vlan=0,ifname=tap0,script=no ../../android-x86/android_x86.iso`
 1. 如果安装android-x86,安装完毕android-x86之后，用下面命令来启动qemu
+
 `sudo ./qemu-system-x86_64 -m 4G --enable-kvm -net nic,vlan=0 -net tap,vlan=0,ifname=tap0,script=no -vga std -serial stdio -hda ../../android_x86.raw`
 
 ##android-x86的ip地址
