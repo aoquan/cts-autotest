@@ -14,11 +14,11 @@
 1. 模拟器（qemu）中的测试方法与真机上一致，但模拟器中需要设置qemu的桥接模式
 1. 运行qemu的命令为（非安装,使用iso）:
 
-`./qemu-system-x86_64 -m 4G --enable-kvm -net nic,vlan=0 -net tap,vlan=0,ifname=tap0,script=no ../../android-x86/android_x86.iso`
+  `./qemu-system-x86_64 -m 4G --enable-kvm -net nic,vlan=0 -net tap,vlan=0,ifname=tap0,script=no ../../android-x86/android_x86.iso`
 
 1. 如果安装android-x86,安装完毕android-x86之后，用下面命令来启动qemu
 
-`sudo ./qemu-system-x86_64 -m 4G --enable-kvm -net nic,vlan=0 -net tap,vlan=0,ifname=tap0,script=no -vga std -serial stdio -hda ../../android_x86.raw`
+  `sudo ./qemu-system-x86_64 -m 4G --enable-kvm -net nic,vlan=0 -net tap,vlan=0,ifname=tap0,script=no -vga std -serial stdio -hda ../../android_x86.raw`
 
 ##android-x86的ip地址
 可以在android中的setting --> about table --> status 看到ip地址信息
