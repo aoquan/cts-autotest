@@ -13,7 +13,7 @@
 1. 模拟器（qemu）中的测试方法与真机上一致，但模拟器中需要设置qemu的桥接模式
 ###运行qemu
 最后运行qemu时的命令为：（非安装,使用iso）
-	./qemu-system-x86_64 -m 4G --enable-kvm -net nic,vlan=0 -net tap,vlan=0,ifname=tap0,script=no ../../android-x86/android_x86.iso 
+    ./qemu-system-x86_64 -m 4G --enable-kvm -net nic,vlan=0 -net tap,vlan=0,ifname=tap0,script=no ../../android-x86/android_x86.iso 
 
 安装完android-x86之后，用下面命令来启动qemu
 	sudo ./qemu-system-x86_64 -m 4G --enable-kvm -net nic,vlan=0 -net tap,vlan=0,ifname=tap0,script=no -vga std -serial stdio -hda ../../android_x86.raw
@@ -34,16 +34,16 @@ up ifconfig IFACE 0.0.0.0 up
 down ifconfig IFACE 0.0.0.0 up 
 down ifconfig IFACE down
 tunctl_user aquan      
-#aquan是我的用户名，在这里换为你的用户名
+/#aquan是我的用户名，在这里换为你的用户名
 auto br0
 iface br0 inet dhcp
 bridge_ports eth0 tap0
-##这里我们使用dhcp,当然也可以配置成静态的（未实验）
-#auto br0
-#iface br0 inet static      
-#bridge_ports eth0 tap0
-#address 192.168.2.45
-#netmask 255.255.255.0
-#gateway 192.168.2.1
+/#这里我们使用dhcp,当然也可以配置成静态的（未实验）
+/#auto br0
+/#iface br0 inet static      
+/#bridge_ports eth0 tap0
+/#address 192.168.2.45
+/#netmask 255.255.255.0
+/#gateway 192.168.2.1
 ...
 
