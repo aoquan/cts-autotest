@@ -9,5 +9,5 @@
 rip=$1
 arg_s=${@:2} 
 #rsync  --delete  -avz -e ssh ../android_auto/   root@${rip}:~/android_auto/
-rsync   -avz -e ssh ./  root@${rip}:~/android_auto/
+rsync   -avz -e ssh ./autoFrame/ root@${rip}:~/android_auto/
 ssh root@${rip} "~/android_auto/${arg_s}"

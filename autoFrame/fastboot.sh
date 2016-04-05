@@ -1,5 +1,6 @@
 #!/bin/bash
 ip_linux_host=192.168.2.36
+
 if [ ! -d "./android_disk" ]; then
 	mkdir ./android_disk
 fi
