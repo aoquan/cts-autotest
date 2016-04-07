@@ -3,11 +3,11 @@
 #      安装android_x86
 #android_x86_iso_install.sh
 #####################
-cd ~/android_auto
+cd ~/autoFrame/replace
 mkdir ./android_mnt
 umount ./android_mnt
 #mount ./{android_x86.iso}  ./android_mnt
-mount ../android_x86.iso  ./android_mnt
+mount ./android_x86.iso  ./android_mnt
 
 cp  ./android_mnt/kernel         .
 cp  ./android_mnt/initrd.img     .

@@ -69,7 +69,6 @@ if [ "$1" = "repalce-ramdisk" ]; then
 	cp  ./ramdisk.img   ./android_disk/android-2016-02-29/ramdisk.img
 	efibootmgr -n 6
 	reboot
-	exit
 fi
 
 if [ "$1" = "replace-system" ]; then

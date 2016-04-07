@@ -56,13 +56,15 @@ if [ "$1" == "v" ]; then
 			adb disconnect $ip_android_v	
 		}
 	fi
-else
+elif [ "$1" == "r" ];then
 	## real mechine
 	ip_linux_client=$2
-	autoFrame/android_tool.sh $ip_linux_client fastboot.sh reboot
+	autoFrame/android_tool.sh $ip_linux_client fastboot.sh $3
+
+
 	ip_android_r=`nc -lp 5556`
 	adb connect $ip_android_r
-	android-cts/tools/cts-tradefed run cts --plan CTS --disable-reboot  
+	../android-cts/tools/cts-tradefed run cts --plan CTS --disable-reboot  
 	adb disconnect $ip_android_r
 
 fi
