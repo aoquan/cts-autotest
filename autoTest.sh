@@ -18,7 +18,7 @@
 
 ## example:
 ## virtual mechine: sudo ./autoTest.sh v raw ../rawiso/android_x86.raw "--plan CTS --disable-reboot"
-## real mechine: sudo ./autoTest.sh r 192.168.2.16 /dev/sda4 "--plan CTS --disable-reboot"
+## real mechine: sudo ./autoTest.sh r 192.168.2.16 /dev/sda5 "--plan CTS --disable-reboot"
 #################################################################
 
 
@@ -58,36 +58,29 @@ elif [ "$1" == "r" ];then
 	androidLocation=$3
 	## loction(sda) of android system 
 
-	ssh root@${ip_linux_client}
-	if [ ! -d "android_disk" ]; then
-			mkdir  android_disk
-	fi
-	#mount /dev/sda4 android_disk;
-	mount androidLocation android_disk;
 
-	line2bottom=`tail android_disk/android*/system/etc/init.sh -n 2 |head -n 1`
+	rsync   -avz -e ssh ./script root@${ip_linux_client}:~/;
+	ssh root@${ip_linux_client} "~/script/reboot.sh $androidLocation $ip_linux_host";
 
-	sed '$d' -i ./android_disk/android*/system/etc/init.sh
-	sed '$d' -i ./android_disk/android*/system/etc/init.sh
 
-	if [ "$line2bottom" == "" ]; then
-		echo "ip=\`getprop | grep ipaddress\`
-		ip=\${ip##*\[}
-		ip=\${ip%]*}
-		echo \$ip | nc -q 0 $ip_linux_host 5556
-		return 0" >> ./android_disk/android*/system/etc/init.sh
-	else
-		echo "		echo \$ip | nc -q 0 $ip_linux_host 5556
-		return 0" >> ./android_disk/android*/system/etc/init.sh
-	fi
-	umount android_disk;
-	efibootmgr -n 6
-	reboot
+	##ssh root@${ip_linux_client}
 
 	## return to linux_host command
 	ip_android_r=`nc -lp 5556`
+	echo $ip_android_r
 	adb connect $ip_android_r
-	../android-cts/tools/cts-tradefed run cts --plan CTS --disable-reboot  
+	## firstly, modify the grub
+	adb shell mkdir data/linux
+	adb shell busybox mount /dev/block/sda2 data/linux;
+	adb shell sed -i '/set default=\"[0-9]\"/c''set default=\"2\"' data/linux/boot/grub/grub.cfg
+	#../android-cts/tools/cts-tradefed run cts --plan CTS --disable-reboot 
+	echo 'testing!!!!!!!'  
+	sleep 20
+
+	../android-cts/tools/cts-tradefed run cts $ctsCmd
+	adb shell busybox umount /data/linux
+	adb shell rm data/linux -r
+	adb shell reboot
 	adb disconnect $ip_android_r
 fi
 
