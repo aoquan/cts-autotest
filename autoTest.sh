@@ -18,6 +18,7 @@
 
 ## example:
 ## virtual mechine: sudo ./autoTest.sh v raw ../rawiso/android_x86.raw "--plan CTS --disable-reboot"
+## virtual mechine: sudo ./autoTest.sh v raw ~/work/cts/android_x86.raw "-p android.JobScheduler --disable-reboot"
 ## real mechine: sudo ./autoTest.sh r 192.168.2.16 /dev/sda5 "--plan CTS --disable-reboot"
 #################################################################
 
@@ -28,17 +29,29 @@ ctsCmd="$4"
 ## according to where it's virtual mechine(qemu) or real mechine, we should change the network model
 if [ "$1" == "v" ]; then
 	if [ "$2" == "raw" ];then
-		rawIsoLocation=$3
-
+		rawIsoLocation=$3 
 		if [ ! -d "android_disk" ]; then
 			mkdir  android_disk
 		fi
 		mount -o loop,offset=32256 $rawIsoLocation android_disk;
-		sed '$d' -i ./android_disk/android*/system/etc/init.sh
-		sed '$d' -i ./android_disk/android*/system/etc/init.sh
-		echo "echo \$ip | nc -q 0 $ip_linux_host 5556
-			return
-			" >> ./android_disk/android*/system/etc/init.sh
+        ########################################
+        ## modify init.sh
+        line2bottom=`tail android_disk/android*/system/etc/init.sh -n 2 |head -n 1`
+        
+        sed '$d' -i ./android_disk/android*/system/etc/init.sh
+        sed '$d' -i ./android_disk/android*/system/etc/init.sh
+        
+        if [ "$line2bottom" == "" ]; then
+            echo "ip=\`getprop | grep ipaddress\`
+            ip=\${ip##*\[}
+            ip=\${ip%]*}
+            echo \$ip | nc -q 0 $ip_linux_host 5556
+            return 0" >> ./android_disk/android*/system/etc/init.sh
+        else
+            echo "      echo \$ip | nc -q 0 $ip_linux_host 5556
+            return 0" >> ./android_disk/android*/system/etc/init.sh
+        fi
+        #######################################
 		umount android_disk;
 
 		qemu-system-x86_64 -m 2G --enable-kvm -net nic -net user,hostfwd=tcp::5557-:5555 $rawIsoLocation &
@@ -49,6 +62,8 @@ if [ "$1" == "v" ]; then
 			adb connect localhost:5557
 			#../android-cts/tools/cts-tradefed run cts --plan CTS --disable-reboot
 			../android-cts/tools/cts-tradefed run cts $ctsCmd
+			../android-cts/tools/cts-tradefed run cts exit
+            adb shell poweroff
 			adb disconnect localhost:5557
 		}
 	fi
@@ -83,6 +98,7 @@ elif [ "$1" == "r" ];then
 	adb shell reboot
 	adb disconnect $ip_android_r
 fi
+
 
 
 
