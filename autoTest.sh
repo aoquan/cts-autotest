@@ -18,7 +18,7 @@
 
 ## example:
 ## virtual mechine: sudo ./autoTest.sh v raw ../rawiso/android_x86.raw "--plan CTS --disable-reboot"
-## virtual mechine: sudo ./autoTest.sh v raw ~/work/cts/android_x86.raw "-p android.JobScheduler --disable-reboot"
+## virtual mechine: sudo ./autoTest.sh v raw ~/work/cts/android-x86-6.0.raw "-p android.JobScheduler --disable-reboot"
 ## real mechine: sudo ./autoTest.sh r 192.168.2.16 /dev/sda5 "--plan CTS --disable-reboot"
 #################################################################
 
@@ -60,11 +60,13 @@ if [ "$1" == "v" ]; then
 			## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
 			## so it's just a symbol that android-x86 is running 
 			adb connect localhost:5557
-			#../android-cts/tools/cts-tradefed run cts --plan CTS --disable-reboot
-			../android-cts/tools/cts-tradefed run cts $ctsCmd
-			../android-cts/tools/cts-tradefed run cts exit
+			../android-cts/tools/cts-tradefed run cts 
+			../android-cts/tools/cts-tradefed run cts << EOF
+\$ctsCmd
+exit
+EOF
+			#../android-cts/tools/cts-tradefed exit
             adb shell poweroff
-			adb disconnect localhost:5557
 		}
 	fi
 elif [ "$1" == "r" ];then
