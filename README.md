@@ -25,6 +25,14 @@
  
 ##设置qemu的网络桥接模式
 ```
+for we use regular expression to  get ipaddress, in order to avoid mistakes, we should change our system language into English, both root and normal user
+change /etc/default/locale
+```
+LANG="en_US.UTF-8"
+LANGUAGE="en_US:en"
+```
+
+now we change network bridge to NAT, so the content below is useless
 对/etc/network/interfaces文件进行修改
 改成如下即可
 auto eth0
@@ -47,3 +55,4 @@ bridge_ports eth0 tap0
 #netmask 255.255.255.0
 #gateway 192.168.2.1
 ```
+
