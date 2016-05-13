@@ -23,19 +23,42 @@
 ## real mechine: sudo ./autoTest.sh r 192.168.2.16 /dev/sda5 "-p android.acceleration --disable-reboot"
 #################################################################
 
+##########################################################################################################################
+## $1 : virtual mechine or real mechine (v/r)
+## $2 : run android_x86(run) or install android_x86.iso(install)
+## $3 : ip of client linux system, if you test local android_x86, use localhost of 127.0.0.1
+## $4 : path of disk(/dev/sda40) or virtual disk(../rawiso/android_x86.raw)
+## $5 : cts command("-p android.acceleration --disable-reboot")
+## if test mechine has been installed android_x86, on the other world, $2=run, this 5 parameter above is enough
+########################################################################################################################
+## but if we need to install a new android_x86, we should also specify the path of android_x86.iso, so $6 is needed  
+## $6 : path of android_x86.iso(../rawiso/android_x86.iso)
+#########################################################################################################################
+
+r_v=$1
+run_install=$2
+ip_linux_client=$3
+disk_path=$4
+cts_cmd=$5
 
 ip_linux_host=`/sbin/ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|awk '{print $2}'|tr -d "addr:"`
-ctsCmd="$4"
+
 
 ## according to where it's virtual mechine(qemu) or real mechine, we should change the network model
-if [ "$1" == "v" ]; then
+if [ "$r_v" == "v" ]; then
 	#if [ "$2" == "raw" ];then
-	if [ "$2" == "run" ];then
-		rawIsoLocation=$3 
+	if [ "$run_install" == "install" ];then
+		## install iso and then test the android-x86
+		iso_loc=$6
+		fastboot_vir.sh $disk_path flashall
+	fi
+
+	if [ "$run_install" == "run" ]|| [ "$run_install" == "install" ];then
+
 		if [ ! -d "android_disk" ]; then
 			mkdir  android_disk
 		fi
-		mount -o loop,offset=32256 $rawIsoLocation android_disk;
+		mount -o loop,offset=32256 $disk_path android_disk;
         ########################################
         ## modify init.sh
         line2bottom=`tail android_disk/android*/system/etc/init.sh -n 2 |head -n 1`
@@ -56,7 +79,7 @@ if [ "$1" == "v" ]; then
         #######################################
 		umount android_disk;
 
-		qemu-system-x86_64 -m 2G --enable-kvm -net nic -net user,hostfwd=tcp::5558-:5555 $rawIsoLocation &
+		qemu-system-x86_64 -m 2G --enable-kvm -net nic -net user,hostfwd=tcp::5558-:5555 $disk_path &
 		{
 			ip_android_v=`nc -lp 5556`
 			## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
@@ -65,24 +88,19 @@ if [ "$1" == "v" ]; then
             sleep 15
             echo 'testing'
 			adb connect localhost:5558
-			echo "exit" | ../android-cts/tools/cts-tradefed run cts $ctsCmd 
+			echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
             adb shell poweroff
 		}
-	elif [ "$2" == "install" ];then
-		## install iso and then test the android-x86
 
 	fi
-elif [ "$1" == "r" ];then
-	if [ "$4" == "run" ];then
+elif [ "$r_v" == "r" ];then
 
+	if [ "$run_install" == "run" ];then
 		## real mechine
-		ip_linux_client=$2
-		androidLocation=$3
-		## loction(sda) of android system 
-
+		disk_path=$3
 
 		rsync   -avz -e ssh ./script root@${ip_linux_client}:~/;
-		ssh root@${ip_linux_client} "~/script/reboot.sh $androidLocation $ip_linux_host";
+		ssh root@${ip_linux_client} "~/script/reboot.sh $disk_path $ip_linux_host";
 
 		##ssh root@${ip_linux_client}
 
@@ -99,7 +117,7 @@ elif [ "$1" == "r" ];then
 		sleep 15 
     	echo 'testing'
 
-		echo "exit" | ../android-cts/tools/cts-tradefed run cts $ctsCmd
+		echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
 		adb shell busybox umount data/linux;
 		adb shell rm data/linux -r
 		adb shell reboot &
@@ -108,8 +126,20 @@ elif [ "$1" == "r" ];then
     	    sleep 1
     	    pkill adb
     	}
-    elif [ "$4" == "install" ];then
+    elif [ "$run_install" == "install" ];then
     	## install android-x86 and then test
-    	isoLoc=$
-    	auto2.sh $ip_linux_client $
+    	iso_loc=$6
+    	auto2.sh $ip_linux_client $iso_loc $disk_path;
+    	echo "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+    	ip_android=`nc -lp 5556`
+		echo "android boot success!"
+		sleep 5
+		echo ${ip_android}
+		./adb connect ${ip_android}
+		sleep 5
+		echo 'testing'
+		echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
+		###reboot to  linux
+		./android_fastboot.sh  ${ip_android}  reboot_bootloader
+	fi
 fi
