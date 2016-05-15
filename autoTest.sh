@@ -50,9 +50,14 @@ if [ "$r_v" == "v" ]; then
 	if [ "$run_install" == "install" ];then
 		## install iso and then test the android-x86
 		iso_loc=$6
-		fastboot_vir.sh $disk_path flashall
+		if [ ! -d "~/android_auto" ]; then
+			mkdir ~/android_auto
+		fi
+		#cp iso_loc ./android_x86.iso
+		./fastboot_vir.sh $disk_path flashall $iso_loc;
 	fi
 
+	#sleep 40
 	if [ "$run_install" == "run" ]|| [ "$run_install" == "install" ];then
 
 		if [ ! -d "android_disk" ]; then
@@ -62,21 +67,27 @@ if [ "$r_v" == "v" ]; then
         ########################################
         ## modify init.sh
         line2bottom=`tail android_disk/android*/system/etc/init.sh -n 2 |head -n 1`
-        
         sed '$d' -i ./android_disk/android*/system/etc/init.sh
-        sed '$d' -i ./android_disk/android*/system/etc/init.sh
+		sed '$d' -i ./android_disk/android*/system/etc/init.sh
+
+		#echo \$ip | nc -q 0 $ip_linux_host 5556
+		if [ "$line2bottom" == "" ]; then
+			echo "ip=\`getprop | grep ipaddress\`
+			ip=\${ip##*\[}
+			ip=\${ip%]*}
+			nc $ip_linux_host 5556 << EOF
+    		\$ip
+EOF
+			return 0" >> ./android_disk/android*/system/etc/init.sh
+		else
+    		sed '$d' -i ./android_disk/android*/system/etc/init.sh
+    		sed '$d' -i ./android_disk/android*/system/etc/init.sh
+    		echo "nc $ip_linux_host 5556 << EOF
+    		\$ip
+EOF
+    		return 0" >> ./android_disk/android*/system/etc/init.sh
+		fi
         
-        if [ "$line2bottom" == "" ]; then
-            echo "ip=\`getprop | grep ipaddress\`
-            ip=\${ip##*\[}
-            ip=\${ip%]*}
-            echo \$ip | nc -q 0 $ip_linux_host 5556
-            return 0" >> ./android_disk/android*/system/etc/init.sh
-        else
-            echo "      echo \$ip | nc -q 0 $ip_linux_host 5556
-            return 0" >> ./android_disk/android*/system/etc/init.sh
-        fi
-        #######################################
 		umount android_disk;
 
 		qemu-system-x86_64 -m 2G --enable-kvm -net nic -net user,hostfwd=tcp::5558-:5555 $disk_path &
@@ -85,7 +96,8 @@ if [ "$r_v" == "v" ]; then
 			## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
 			## so it's just a symbol that android-x86 is running 
 	        echo 'waiting for android boot !!!!!'  
-            sleep 15
+            sleep 60
+            ## gui haven't been loaded completely for android_x86-5.1 
             echo 'testing'
 			adb connect localhost:5558
 			echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
@@ -129,13 +141,12 @@ elif [ "$r_v" == "r" ];then
     elif [ "$run_install" == "install" ];then
     	## install android-x86 and then test
     	iso_loc=$6
-    	auto2.sh $ip_linux_client $iso_loc $disk_path;
-    	echo "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+    	./auto2.sh $ip_linux_client $iso_loc $disk_path;
     	ip_android=`nc -lp 5556`
 		echo "android boot success!"
-		sleep 5
+		sleep 30
 		echo ${ip_android}
-		./adb connect ${ip_android}
+		adb connect ${ip_android}
 		sleep 5
 		echo 'testing'
 		echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
