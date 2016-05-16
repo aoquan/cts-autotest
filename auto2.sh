@@ -30,21 +30,16 @@ ssh root@${ip_linux} "rm -rf /root/android_auto/"
 ./android_tool.sh ${ip_linux}  partition_disk.sh ${diskpart_for_android}
 
 ## add by aoquan
-ssh root@${ip_linux} "~/android_auto/script/edit_init.sh ${ip_linux_host}"
+#ssh root@${ip_linux} "~/android_auto/script/edit_init.sh ${ip_linux_host}"
 
-./android_tool.sh ${ip_linux}  fastboot.sh  ${diskpart_for_android}  reboot_bootloader
-
-
+#./android_tool.sh ${ip_linux}  fastboot.sh  ${diskpart_for_android}  reboot_bootloader
 
 
-ip_linux=`nc -lp 5556`
-echo "linux reboot done!"
-sleep 5
 
-###when reboot is ok?
-#sleep 120
-##read -p "reboot is ok?" reboot_ok
-#echo ${reboot_ok}
+
+# ip_linux=`nc -lp 5556`
+# echo "linux reboot done!"
+# sleep 5
 
 ./android_tool.sh ${ip_linux}  android_x86_iso_install.sh ${diskpart_for_android} 
 

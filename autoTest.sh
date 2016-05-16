@@ -109,7 +109,6 @@ elif [ "$r_v" == "r" ];then
 
 	if [ "$run_install" == "run" ];then
 		## real mechine
-		disk_path=$3
 
 		rsync   -avz -e ssh ./script root@${ip_linux_client}:~/;
 		ssh root@${ip_linux_client} "~/script/reboot.sh $disk_path $ip_linux_host";
@@ -131,7 +130,7 @@ elif [ "$r_v" == "r" ];then
 
 		echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
 		adb shell busybox umount data/linux;
-		adb shell rm data/linux -r
+		adb shell rm -r data/linux
 		adb shell reboot &
     	{
     	    ## for adb shell reboot will wait for the android_x86 reboot, so we have to kill this process  
