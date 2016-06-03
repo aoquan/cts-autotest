@@ -31,17 +31,17 @@ read -p "please input the ip_android:" ip_android
 echo ${ip_android}
 
 
-./adb connect ${ip_android}
+adb connect ${ip_android}
 
 sleep 3
 
 
-#./adb install ./fndxn2_yoyou.com.apk
-./adb install ./net.jishigou.t2.8.0.apk
+#adb install ./fndxn2_yoyou.com.apk
+adb install ./net.jishigou.t2.8.0.apk
 
 sleep 3
 
-./adb shell am start -n net.jishigou.t/net.jishigou.t.StartActivity
+adb shell am start -n net.jishigou.t/net.jishigou.t.StartActivity
 
 #./adb push  ./xxx/x   /x/x/x/
 #./adb shell /x/x/x/x
@@ -52,7 +52,7 @@ sleep 3
 #rm -rf ./test_result
 sleep 10
 
-./adb reboot
+adb reboot
 
 
 

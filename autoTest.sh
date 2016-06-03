@@ -48,14 +48,14 @@ function EditBoot()
 		echo "ip=\`getprop | grep ipaddress\`
 		ip=\${ip##*\[}
 		ip=\${ip%]*}
-		nc $ip_linux_host 5556 << EOF
+		nc -w 2 $ip_linux_host 5556 << EOF
     	\$ip
 EOF
 		return 0" >> ./android_disk/android*/system/etc/init.sh
 	else
     	sed '$d' -i ./android_disk/android*/system/etc/init.sh
     	sed '$d' -i ./android_disk/android*/system/etc/init.sh
-    	echo "nc $ip_linux_host 5556 << EOF
+    	echo "nc -w 2 $ip_linux_host 5556 << EOF
     	\$ip
 EOF
     	return 0" >> ./android_disk/android*/system/etc/init.sh
@@ -85,6 +85,8 @@ if [ "$r_v" == "v" ]; then
 	        echo 'waiting for android boot !!!!!'  
             sleep 60
 			adb connect localhost:5558
+            ##keep screen active
+            adb shell svc power stayon true
 			## install CtsDeviceAdmin.apk
             echo 'install CtsDeviceAdmin.apk!!!!!'
             adb install ../android-cts/repository/testcases/CtsDeviceAdmin.apk
@@ -154,6 +156,22 @@ elif [ "$r_v" == "r" ];then
 		echo ${ip_android}
 		adb connect ${ip_android}
 		sleep 5
+
+        ##keep screen active
+        adb shell svc power stayon true
+        echo 'install CtsDeviceAdmin.apk!!!!!'
+        adb install ../android-cts/repository/testcases/CtsDeviceAdmin.apk
+        adb push device_policies.xml data/system/device_policies.xml
+		./android_fastboot.sh  ${ip_android} bios_reboot 
+
+        ##second boot 
+    	ip_android=`nc -lp 5556`
+		echo "android boot success!"
+		sleep 30
+		echo ${ip_android}
+		adb connect ${ip_android}
+		sleep 5
+        
 		echo 'testing'
 		echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
 		###reboot to  linux
