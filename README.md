@@ -1,6 +1,6 @@
 #CTS自动化测试
 ## 自动化安装原理
-关于如何配置ssh无密码登陆以及安装过程的原理，[参考](https://github.com/xyongcn/openthos-testing/blob/master/bare_metal_autotest/android_auto/README.md)
+关于如何配置ssh无密码登陆以及安装过程的原理，参考[毛英明的帮助](https://github.com/xyongcn/openthos-testing/blob/master/bare_metal_autotest/android_auto/README.md)
 ## CTS测试
 ###搭建测试环境
 1. 测试机(linux)需要安装jdk1.6或者1.7，不支持1.8
@@ -33,6 +33,10 @@
 * 测试举例：
  1. ./autoTest.sh v install localhost android-x86-6.0.raw "-p android.acceleration --disable-reboot" android_x86.iso
  1. ./autoTest.sh v run localhost android-x86-6.0.raw "-p android.acceleration --disable-reboot"
+
+###多台机器安装测试
+* 目前多台机器测试还停留在串行测试阶段
+* 用户需要根据自己的需要编写shell，可以参考run.sh脚本
 
 ###并行安装测试
 安装android-x86较为耗时，为了提高程序性能，采用并行安装与测试
