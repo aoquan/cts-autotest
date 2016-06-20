@@ -2,9 +2,11 @@
 ###################### 
 ## $1 : disk path(/dev/sda40)
 ## $2 : 
+cd "$(dirname "$0")"
 disk_path=$1
 boot_cmd=$2
 iso_loc=$3
+
 
 if [ ! -d "./android_mnt" ]; then
 	mkdir  ./android_mnt
