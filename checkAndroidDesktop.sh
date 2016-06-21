@@ -27,6 +27,6 @@ do
 		echo -e "\033[32mAndroid-x86 desktop OK!\033[0m"
 	else
 		sleep 2
-		echo -e "\033[31mAndroid-x86 desktop ERROR!\033[0m"
+		echo -e "\033[31mAndroid-x86 desktop booting!\033[0m"
 	fi
 done

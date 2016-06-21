@@ -43,7 +43,7 @@ sleep 3
 rm -rf ./android_disk/android-2016-02-29/system/*
 cp   -Ra ./system_tmp/*   ./android_disk/android-2016-02-29/system
 ## copy checkAndroidDesktop.sh script into system
-cp ~/checkAndroidDesktop.sh ./android_disk/android-2016-02-29/system/
+cp ~/android_auto/checkAndroidDesktop.sh ./android_disk/android-2016-02-29/system/
 sleep 3
 umount ./system_tmp
 sleep 3

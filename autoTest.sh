@@ -49,12 +49,11 @@ function EditBoot()
 	mount -o loop,offset=32256 $disk_path android_disk;
     ########################################
     ## modify init.sh
-    line2bottom=`tail android_disk/android*/system/etc/init.sh -n 2 |head -n 1`
+    line2bottom=`tail android_disk/android*/system/etc/init.sh -n 1`
     sed '$d' -i ./android_disk/android*/system/etc/init.sh
-	sed '$d' -i ./android_disk/android*/system/etc/init.sh
 
 	#echo \$ip | nc -q 0 $ip_linux_host $ListenPort
-	if [ "$line2bottom" == "" ]; then
+	if [ "$line2bottom" == "return 0" ]; then
 		echo "ip=\`getprop | grep ipaddress\`
 		ip=\${ip##*\[}
 		ip=\${ip%]*}
@@ -65,10 +64,11 @@ EOF
 	else
     	sed '$d' -i ./android_disk/android*/system/etc/init.sh
     	sed '$d' -i ./android_disk/android*/system/etc/init.sh
+    	sed '$d' -i ./android_disk/android*/system/etc/init.sh
     	echo "nc -w 2 $ip_linux_host $ListenPort << EOF
     	\$ip
 EOF
-    	return 0" >> ./android_disk/android*/system/etc/init.sh
+    return 0" >> ./android_disk/android*/system/etc/init.sh
 	fi
 	umount android_disk;
 }
@@ -83,20 +83,22 @@ if [ "$r_v" == "v" ]; then
 		# 	mkdir ~/android_auto
 		# fi
 		#cp iso_loc ./android_x86.iso
-		echo $disk_path"YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
 		./fastboot_vir.sh $disk_path flashall $iso_loc;
 		EditBoot
 
 		## install CtsDeviceAdmin.apk and active the device adminstrators, this setting will take effect after reboot 
-		qemu-system-x86_64 -m 2G --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
+		qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
 		{
-			echo 'haha'
 			ip_android_v=`nc -lp $ListenPort`
 			## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
 			## so it's just a symbol that android-x86 is running 
-	        echo 'waiting for android boot !!!!!'  
-            sleep 60
+	        echo 'waiting for android boot !!!!!'
+	        #wait  
+            #sleep 60
 			adb connect $ip_linux_client:$NATPort
+			sleep 2
+			adb -s $ip_linux_client:$NATPort shell system/checkAndroidDesktop.sh
+			sleep 5
             ##keep screen active
             adb -s $ip_linux_client:$NATPort shell svc power stayon true
 			## install CtsDeviceAdmin.apk
@@ -107,26 +109,42 @@ if [ "$r_v" == "v" ]; then
 		}
 
 	fi
-	echo "exiting!!!"
-	exit
-	echo 'exited!!!'
-	#sleep 40
+
 	if [ "$run_install" == "run" ]|| [ "$run_install" == "install" ];then
 
 		EditBoot
-		qemu-system-x86_64 -m 2G --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
+		qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
 		{
 			ip_android_v=`nc -lp $ListenPort`
 			## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
 			## so it's just a symbol that android-x86 is running 
 	        echo 'waiting for android boot !!!!!'  
-            sleep 60
+            #sleep 60
 
             ## gui haven't been loaded completely for android_x86-5.1 
-            echo 'testing'
+            #echo 'testing'
 			adb connect localhost:$NATPort
-			#echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
-            #adb -s $ip_linux_client:$NATPort shell poweroff
+			sleep 2
+			adb -s $ip_linux_client:$NATPort shell system/checkAndroidDesktop.sh
+			sleep 5
+			echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
+            adb -s $ip_linux_client:$NATPort shell poweroff
+		}
+	fi
+
+	if [ "$run_install" == "start" ];then
+		EditBoot
+		qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
+		{
+			ip_android_v=`nc -lp $ListenPort`
+			## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
+			## so it's just a symbol that android-x86 is running 
+	        echo 'waiting for android boot !!!!!'  
+	        adb connect localhost:$NATPort
+			sleep 2
+			adb -s $ip_linux_client:$NATPort shell system/checkAndroidDesktop.sh
+			sleep 5
+
 		}
 	fi
 elif [ "$r_v" == "r" ];then
@@ -169,10 +187,11 @@ elif [ "$r_v" == "r" ];then
     	./auto2.sh $ip_linux_client $iso_loc $disk_path $ListenPort;
     	ip_android=`nc -lp $ListenPort`
 		echo "android boot success!"
-		sleep 30
+		#sleep 30
 		echo ${ip_android}
 		adb connect ${ip_android}
-		sleep 5
+		wait
+		adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
 
         ##keep screen active
         adb -s $ip_android:5555 shell svc power stayon true
@@ -184,10 +203,13 @@ elif [ "$r_v" == "r" ];then
         ##second boot 
     	ip_android=`nc -lp $ListenPort`
 		echo "android boot success!"
-		sleep 30
+
+		#sleep 30
 		echo ${ip_android}
 		adb connect ${ip_android}
-		sleep 5
+		wait
+		adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
+		#sleep 5
         
 		echo 'testing'
 		echo "exit" | ../android-cts/tools/cts-tradefed run cts -s $ip_android:5555 $cts_cmd
@@ -204,5 +226,10 @@ elif [ "$r_v" == "r" ];then
 		sleep 2
 		echo 'waiting for android boot !!!!!' 
 		adb -s $ip_android_r:5555 shell system/checkAndroidDesktop.sh
+		#####
+		#add lkp test and gui test
+
+		#####
+		./android_fastboot.sh  ${ip_android_r}  reboot_bootloader
 	fi
 fi

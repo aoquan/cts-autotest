@@ -72,6 +72,9 @@ if [ "$boot_cmd" = "flashall" ];then
 	
 	sleep 2
 	rm system_tmp -r;
+
+	##cp check android desktop script
+	cp checkAndroidDesktop.sh ./android_disk/android*/system/
 fi
 umount android_mnt;
 umount android_disk;
