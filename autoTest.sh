@@ -28,6 +28,7 @@
 ## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run cts "-p android.acceleration --disable-reboot"
 ## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run all "-p android.acceleration --disable-reboot"
 ## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run lkp 
+## eg: ./autoTest.sh v localhost /media/aquan/000D204000041550/android-x86.raw  installTest ../xyl_android_x86_64_5.1.iso "-p android.acceleration --disable-reboot"
 
 
 cd "$(dirname "$0")"
