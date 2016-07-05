@@ -16,3 +16,5 @@ adb -s $ip push ./lkpgui /data/local/tmp
 adb -s $ip shell /data/local/tmp/ebizzy > $result/ebizzy/default/$host/$rootfs/$kconfig/$cc/$kernel/$no/ebizzy.out
 adb -s $ip shell /data/local/tmp/nbench > $result/nbench/default/$host/$rootfs/$kconfig/$cc/$kernel/$no/nbench.out
 adb -s $ip shell uiautomator runtest demo1.jar -c com.browser.demobrowser > $result/browser/default/$host/$rootfs/$kconfig/$cc/$kernel/$no/browser.out
+
+tar -cvf result.tar $result
