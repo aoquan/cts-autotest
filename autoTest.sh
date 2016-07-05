@@ -11,36 +11,37 @@
 
 ##########################################################################################################################
 ## $1 : virtual mechine or real mechine (v/r)
-## $2 : run android_x86(run) or install android_x86.iso(install), other test (start)
-## $3 : ip of client linux system, if you test local android_x86, use localhost or 127.0.0.1
-## $4 : path of disk(/dev/sda40) or virtual disk(../rawiso/android_x86.raw)
-## $5 : cts command("-p android.acceleration --disable-reboot")
-## if test mechine has been installed android_x86, on the other world, $2=run, this 5 parameter above is enough
-########################################################################################################################
-## but if we need to install a new android_x86, we should also specify the path of android_x86.iso, so $6 is needed  
-## $6 : path of android_x86.iso(../rawiso/android_x86.iso)
-## $6 : if test($2=="run"), specific test type(cts/lkp/all)
-#########################################################################################################################
-## eg: ./autoTest.sh r install 192.168.2.16 /dev/sda40 "-p android.acceleration --disable-reboot" android_x86.iso
-## eg: ./autoTest.sh v install localhost /media/aquan/000D204000041550/research/android-x86-6.0.raw "-p android.acceleration --disable-reboot" android_x86.iso
-## eg: ./autoTest.sh r run 192.168.2.16 /dev/sda40 "-p android.acceleration --disable-reboot" cts
+## $2 : ip of client linux system, if you test local android_x86, use localhost or 127.0.0.1
+## $3: path of disk(/dev/sda40) or virtual disk(../rawiso/android_x86.raw)
+## $4 : run android_x86(run) or install android_x86.iso(install), install and run the testcase(installTest)
+## if $4 == install || $4 == installTest
+    ## $5: location of android_x86.iso
+## if $4 == run
+    ## $5: type of test(lkp/cts/all)
+        ## if $5 == cts || $5 == all
+            ## $6: cts command that need to be excuted
+        ## if $5 == lkp
+            ## It's enough
+
+## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 install android_x86.iso
+## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 installTest android_x86.iso "-p android.acceleration --disable-reboot"
+## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run cts "-p android.acceleration --disable-reboot"
+## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run all "-p android.acceleration --disable-reboot"
+## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run lkp 
 
 
 cd "$(dirname "$0")"
 
 r_v=$1
-run_install=$2
-ip_linux_client=$3
-disk_path=$4
-cts_cmd=$5
-#####
+ip_linux_client=$2
+disk_path=$3
+run_install=$4 
+
 ## listening port, user should specify it when parallel tesing 
 # ListenPort=$7
 ListenPort=52001
 NATPort=$(($ListenPort+100))
 
-
-#####
 
 ip_linux_host=`/sbin/ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|awk '{print $2}'|tr -d "addr:"`
 
@@ -72,7 +73,7 @@ checkIP $ip_linux_client
 function EditBoot()
 {
     if [ ! -d "android_disk" ]; then
-	mkdir  android_disk
+    mkdir  android_disk
     fi
     mount -o loop,offset=32256 $disk_path android_disk;
     ########################################
@@ -82,11 +83,11 @@ function EditBoot()
 
     #echo \$ip | nc -q 0 $ip_linux_host $ListenPort
     if [ "$line2bottom" == "return 0" ]; then
-	echo "ip=\`getprop | grep ipaddress\`
-	ip=\${ip##*\[}
-	ip=\${ip%]*}
-	nc -w 2 $ip_linux_host $ListenPort << EOF
-    	\$ip
+    echo "ip=\`getprop | grep ipaddress\`
+    ip=\${ip##*\[}
+    ip=\${ip%]*}
+    nc -w 2 $ip_linux_host $ListenPort << EOF
+        \$ip
 EOF
         return 0" >> ./android_disk/android*/system/etc/init.sh
     else
@@ -94,9 +95,9 @@ EOF
         sed '$d' -i ./android_disk/android*/system/etc/init.sh
         sed '$d' -i ./android_disk/android*/system/etc/init.sh
         echo "nc -w 2 $ip_linux_host $ListenPort << EOF
-    	\$ip
+        \$ip
 EOF
-    	return 0" >> ./android_disk/android*/system/etc/init.sh
+        return 0" >> ./android_disk/android*/system/etc/init.sh
     fi
     umount android_disk;
 }
@@ -105,215 +106,165 @@ EOF
 
 ## according to where it's virtual mechine(qemu) or real mechine, we should change the network model
 if [ "$r_v" == "v" ]; then
-    #if [ "$2" == "raw" ];then
     if [ "$run_install" == "installTest" ] || [ "$run_install" == "install" ];then
-	## install iso and then test the android-x86
-	iso_loc=$6
-	# if [ ! -d "~/android_auto" ]; then
-	# 	mkdir ~/android_auto
-	# fi
-	#cp iso_loc ./android_x86.iso
-	./fastboot_vir.sh $disk_path flashall $iso_loc;
-	EditBoot
+        ## install iso and then test the android-x86
+        iso_loc=$5
+        ./fastboot_vir.sh $disk_path flashall $iso_loc;
+        EditBoot
 
-	## install CtsDeviceAdmin.apk and active the device adminstrators, this setting will take effect after reboot 
-	qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
-	{
-	    ip_android_v=`nc -lp $ListenPort`
-	    ## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
-	    ## so it's just a symbol that android-x86 is running 
-	    echo 'waiting for android boot !!!!!'
-	    #wait  
-            #sleep 60
-	    adb connect $ip_linux_client:$NATPort
-	    sleep 2
-	    adb -s $ip_linux_client:$NATPort shell system/checkAndroidDesktop.sh
-	    sleep 5
+        ## install CtsDeviceAdmin.apk and active the device adminstrators, this setting will take effect after reboot 
+        qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
+        {
+            ip_android_v=`nc -lp $ListenPort`
+            ## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
+            ## so it's just a symbol that android-x86 is running 
+            echo 'waiting for android boot !!!!!'
+            adb connect $ip_linux_client:$NATPort
+            sleep 2
+            adb -s $ip_linux_client:$NATPort shell system/checkAndroidDesktop.sh
+            sleep 5
             ##keep screen active
             adb -s $ip_linux_client:$NATPort shell svc power stayon true
-	    ## install CtsDeviceAdmin.apk
+            ## install CtsDeviceAdmin.apk
             echo 'install CtsDeviceAdmin.apk!!!!!'
             adb -s $ip_linux_client:$NATPort install ../android-cts/repository/testcases/CtsDeviceAdmin.apk
             adb -s $ip_linux_client:$NATPort push device_policies.xml data/system/device_policies.xml
             adb -s $ip_linux_client:$NATPort shell poweroff
-	}
+        }
     fi
 
-    if [ "$run_install" == "run" ]|| [ "$run_install" == "installTest" ];then
+    if [ "$run_install" == "installTest" ];then
 
-	EditBoot
-	qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
-	{
-	    ip_android_v=`nc -lp $ListenPort`
-	    ## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
-	    ## so it's just a symbol that android-x86 is running 
-	    echo 'waiting for android boot !!!!!'  
-            #sleep 60
+        #EditBoot
+        qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
+        {
+            ip_android_v=`nc -lp $ListenPort`
+            echo 'waiting for android boot !!!!!'  
 
             ## gui haven't been loaded completely for android_x86-5.1 
-            #echo 'testing'
-	    adb connect localhost:$NATPort
-	    sleep 2
-	    adb -s localhost:$NATPort shell system/checkAndroidDesktop.sh
-	    sleep 5
-	
-	    if [ "$run_install" ==  "installTest" ];then
-            	./allinone.sh localhost:$NATPort 0
-	    	echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
-	    else
-		testType=$6
-		if [ "$testType" == "cts" ];then
-	    	    echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
-		elif [ "$testType" == "lkp" ];then
-            	    ./allinone.sh localhost:$NATPort 0
-		elif [ "$testType" == "all" ];then
-            	    ./allinone.sh localhost:$NATPort 0
-	    	    echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
-		fi
-	    fi	
-		    
+            adb connect localhost:$NATPort
+            sleep 2
+            adb -s localhost:$NATPort shell system/checkAndroidDesktop.sh
+            sleep 5
+            cts_cmd="$6"       
+            ./allinone.sh localhost:$NATPort 0
+            echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
             adb -s localhost:$NATPort shell poweroff
-	}
+        }
     fi
 
-    if [ "$run_install" == "start" ];then
-	EditBoot
-	qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
-	{
-	    ip_android_v=`nc -lp $ListenPort`
-	    ## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
-	    ## so it's just a symbol that android-x86 is running 
-	    echo 'waiting for android boot !!!!!'  
-	    adb connect localhost:$NATPort
-	    sleep 2
-	    adb -s $ip_linux_client:$NATPort shell system/checkAndroidDesktop.sh
-	    sleep 5
-            #####################
-            ## add your test code
-            ./allinone.sh localhost:$NATPort 0
-            #####################
-            adb -s $ip_linux_client:$NATPort shell poweroff
-	}
+    if [ "$run_install" == "run" ];then
+
+        EditBoot
+        qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
+        {
+            ip_android_v=`nc -lp $ListenPort`
+            echo 'waiting for android boot !!!!!'  
+
+            adb connect localhost:$NATPort
+            sleep 2
+            adb -s localhost:$NATPort shell system/checkAndroidDesktop.sh
+            sleep 5
+        
+            testType=$5 
+            if [ "$testType" == "cts" ];then
+                cts_cmd="$6"
+                echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
+            elif [ "$testType" == "lkp" ];then
+                ./allinone.sh localhost:$NATPort 0
+            elif [ "$testType" == "all" ];then
+                cts_cmd="$6"
+                ./allinone.sh localhost:$NATPort 0
+                echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
+            fi
+            adb -s localhost:$NATPort shell poweroff
+        }
     fi
+    
 elif [ "$r_v" == "r" ];then
     if [ "$run_install" == "run" ];then
-	## real mechine
+        ## real mechine
+        rsync   -avz -e ssh ./scriptReboot1 root@${ip_linux_client}:~/;
+        ssh root@${ip_linux_client} "~/scriptReboot1/reboot.sh $disk_path $ip_linux_host $ListenPort";
 
-	rsync   -avz -e ssh ./scriptReboot1 root@${ip_linux_client}:~/;
-	ssh root@${ip_linux_client} "~/scriptReboot1/reboot.sh $disk_path $ip_linux_host $ListenPort";
+        ip_android_r=`nc -lp $ListenPort`
+        echo $ip_android_r
+        adb connect $ip_android_r
+        sleep 2
+        echo 'waiting for android boot !!!!!' 
+        adb -s $ip_android_r:5555 shell system/checkAndroidDesktop.sh
 
-	##ssh root@${ip_linux_client}
-	## return to linux_host command
-	ip_android_r=`nc -lp $ListenPort`
-	echo $ip_android_r
-	adb connect $ip_android_r
-	sleep 2
-	echo 'waiting for android boot !!!!!' 
-	adb -s $ip_android_r:5555 shell system/checkAndroidDesktop.sh
-	## firstly, modify the grub
-	#adb -s $ip_android_r:5555 shell mkdir data/linux
-	#adb -s $ip_android_r:5555 shell busybox mount /dev/block/sda2 data/linux
-	#sleep 2
-	#adb -s $ip_android_r:5555 shell sed -i '/set default=\"[0-9]\"/c''set default=\"1\"' data/linux/boot/grub/grub.cfg
+        echo 'testing'
+        testType=$5
+        if [ "$testType" == "cts" ];then
+            cts_cmd="$6"
+            echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
+        elif [ "$testType" == "lkp" ];then
+            ./allinone.sh $ip_android_r:5555 0
+        elif [ "$testType" == "all" ];then
+            cts_cmd="$6"
+            ./allinone.sh $ip_android_r:5555 0
+            echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
+        fi
 
-    	echo 'testing'
-	testType=$6
-	if [ "$testType" == "cts" ];then
-
-	    echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
-	elif [ "$testType" == "lkp" ];then
-	    ./allinone.sh $ip_android_r:5555 0
-	elif [ "$testType" == "all" ];then
-	    ./allinone.sh $ip_android_r:5555 0
-	    echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
-	fi
-
-	./android_fastboot.sh  $ip_android_r  reboot_bootloader
-	
-	#adb -s $ip_android_r:5555 shell busybox umount data/linux;
-	#adb -s $ip_android_r:5555 shell rm -r data/linux
-	#adb -s $ip_android_r:5555 shell reboot &
-    	#{
-    	#    ## for adb shell reboot will wait for the android_x86 reboot, so we have to kill this process  
-    	#    sleep 1
-    	#    pkill adb
-    	#}
+        ./android_fastboot.sh  $ip_android_r  reboot_bootloader
+    
     elif [ "$run_install" == "installTest" ];then
-    	## install android-x86 and then test
-    	iso_loc=$6
-    	./auto2.sh $ip_linux_client $iso_loc $disk_path $ListenPort;
-    	ip_android=`nc -lp $ListenPort`
-	echo "android boot success!"
-	#sleep 30
-	echo ${ip_android}
-	adb connect ${ip_android}
-	wait
-	adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
+        ## install android-x86 and then test
+        iso_loc=$5
+        ./auto2.sh $ip_linux_client $iso_loc $disk_path $ListenPort;
+        ip_android=`nc -lp $ListenPort`
+        echo "android boot success!"
+        #sleep 30
+        echo ${ip_android}
+        adb connect ${ip_android}
+        sleep 1
+        adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
 
         ##keep screen active
         adb -s $ip_android:5555 shell svc power stayon true
         echo 'install CtsDeviceAdmin.apk!!!!!'
         adb -s $ip_android:5555 install ../android-cts/repository/testcases/CtsDeviceAdmin.apk
         adb -s $ip_android:5555 push device_policies.xml data/system/device_policies.xml
-	./android_fastboot.sh  ${ip_android} bios_reboot 
+        ./android_fastboot.sh  ${ip_android} bios_reboot 
 
         ##second boot 
-    	ip_android=`nc -lp $ListenPort`
-	echo "android boot success!"
+        ip_android=`nc -lp $ListenPort`
+        echo "android boot success!"
 
-	#sleep 30
-	echo ${ip_android}
-	adb connect ${ip_android}
-	wait
-	adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
-	#sleep 5
-        
-	echo 'testing'
+        #sleep 30
+        echo ${ip_android}
+        adb connect ${ip_android}
+        wait
+        adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
+        #sleep 5
+        cts_cmd="$6"
+        echo 'testing'
         ./allinone.sh $ip_android:5555 0
-	echo "exit" | ../android-cts/tools/cts-tradefed run cts -s $ip_android:5555 $cts_cmd
-	###reboot to  linux
-	touch aoquanTest
-	./android_fastboot.sh  ${ip_android}  reboot_bootloader
+        echo "exit" | ../android-cts/tools/cts-tradefed run cts -s $ip_android:5555 $cts_cmd
+        ###reboot to  linux
+        ./android_fastboot.sh  ${ip_android}  reboot_bootloader
 
     elif [ "$run_install" == "install" ];then
-    	## install android-x86 and then test
-    	iso_loc=$6
-    	./auto2.sh $ip_linux_client $iso_loc $disk_path $ListenPort;
-    	ip_android=`nc -lp $ListenPort`
-	echo "android boot success!"
-	#sleep 30
-	echo ${ip_android}
-	adb connect ${ip_android}
-	wait
-	adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
+        ## install android-x86 and then test
+        iso_loc=$5
+        ./auto2.sh $ip_linux_client $iso_loc $disk_path $ListenPort;
+        ip_android=`nc -lp $ListenPort`
+        echo "android boot success!"
+        #sleep 30
+        echo ${ip_android}
+        adb connect ${ip_android}
+        wait
+        adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
 
         ##keep screen active
         adb -s $ip_android:5555 shell svc power stayon true
         echo 'install CtsDeviceAdmin.apk!!!!!'
         adb -s $ip_android:5555 install ../android-cts/repository/testcases/CtsDeviceAdmin.apk
         adb -s $ip_android:5555 push device_policies.xml data/system/device_policies.xml
-	sleep 1
-	###reboot to  linux
-	./android_fastboot.sh  ${ip_android}  reboot_bootloader
-
-    elif [ "$run_install" == "start" ];then
-	# start android-x86 but not test
-	rsync   -avz -e ssh ./scriptReboot1 root@${ip_linux_client}:~/;
-	ssh root@${ip_linux_client} "~/scriptReboot1/reboot.sh $disk_path $ip_linux_host $ListenPort";
-	ip_android_r=`nc -lp $ListenPort`
-	echo $ip_android_r
-	adb connect $ip_android_r
-	sleep 2
-	echo 'waiting for android boot !!!!!' 
-	adb -s $ip_android_r:5555 shell system/checkAndroidDesktop.sh
-	#####
-	#add lkp test and gui test
-        #####################
-        ## add your test code
-        ./allinone.sh $ip_android_r:5555 0
-        #####################
-        #adb -s $ip_linux_client:$NATPort shell poweroff
-	#####
-	./android_fastboot.sh  ${ip_android_r}  reboot_bootloader
+        sleep 1 
+        echo "install finished!"
+        ###reboot to  linux
+        ./android_fastboot.sh  ${ip_android}  reboot_bootloader
     fi
 fi
