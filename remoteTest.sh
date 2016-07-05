@@ -1,5 +1,5 @@
 #!/bin/bash  -x
-
+cd "$(dirname "$0")"
 #user="root"
 #cp2host="aquan@192.168.2.39:/"
 #cp2port="22"
