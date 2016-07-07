@@ -1,22 +1,31 @@
-#! /bin/sh -x
-result=/mnt/freenas/result
-host=kvm
-rootfs=android
-kconfig=android_x86
-cc=gcc
-kernel=6.0
-
-ip=$1
-no=$2
-mkdir -p $result/ebizzy/default/$host/$rootfs/$kconfig/$cc/$kernel/$no
-mkdir -p $result/nbench/default/$host/$rootfs/$kconfig/$cc/$kernel/$no
-mkdir -p $result/browser/default/$host/$rootfs/$kconfig/$cc/$kernel/$no
-
-adb -s $ip push ./lkpgui /data/local/tmp
-adb -s $ip shell /data/local/tmp/ebizzy > $result/ebizzy/default/$host/$rootfs/$kconfig/$cc/$kernel/$no/ebizzy.out
-adb -s $ip shell /data/local/tmp/nbench > $result/nbench/default/$host/$rootfs/$kconfig/$cc/$kernel/$no/nbench.out
-adb -s $ip shell uiautomator runtest demo1.jar -c com.browser.demobrowser > $result/browser/default/$host/$rootfs/$kconfig/$cc/$kernel/$no/browser.out
+#!/bin/bash 
+cd "$(dirname "$0")" 
+./autoTest.sh r 192.168.0.70 /dev/sda40 run all "-p android.acceleration --disable-reboot" > testlog.txt 2>&1
+#./autoTest.sh r 192.168.0.70 /dev/sda40 installTest ../android_x86_64-5.1.iso "--plan CTS --disable-reboot"
+#./autoTest.sh r 192.168.0.70 /dev/sda40 installTest ../android_x86_64-5.1.iso "-p android.acceleration --disable-reboot" > testlog.txt 2>&1
 
 
-now=`date +%Y.%m.%d_%H.%M.%S`
-tar -cvf $now"result.tar" $result 
+#user="oto"
+#cp2host="aquan@166.111.197:/"
+#cp2port="11281"
+#user="root"
+#cp2host="aquan@192.168.2.39:/"
+#cp2port="22"
+
+testingUser="oto"
+testingIP="166.111.131.12"
+testingPort="6622"
+testingFold="/home/$testingUser/cts/"
+
+
+remoteUser="aquan"
+remoteHost="166.111.68.197"
+remotePort="11281"
+remoteFold="/home/aquan/"
+
+result="cts/android-cts/repository/results/*.zip"
+
+[ -f /home/$testingUser/$result ] && scp -P $remotePort /home/$testingUser/$result $remoteUser@$remoteHost:$remoteFold
+[ -f /home/$testingUser/cts/cts-autotest/*result.tar ] && scp -P $remotePort /home/$testingUser/cts/cts-autotest/*result.tar $remoteUser@$remoteHost:$remoteFold
+
+rm /home/$testingUser/$result
