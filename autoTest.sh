@@ -113,7 +113,7 @@ if [ "$r_v" == "v" ]; then
         EditBoot
 
         ## install CtsDeviceAdmin.apk and active the device adminstrators, this setting will take effect after reboot 
-        qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
+        qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path -vnc :1 &
         {
             ip_android_v=`nc -lp $ListenPort`
             ## waiting for a message from android-x86, this ip address is useful in real mechine test, but in virtural mechine ,we adopt nat address mapping ,
@@ -136,7 +136,7 @@ if [ "$r_v" == "v" ]; then
     if [ "$run_install" == "installTest" ];then
 
         #EditBoot
-        qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
+        qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path -vnc :2 &
         {
             ip_android_v=`nc -lp $ListenPort`
             echo 'waiting for android boot !!!!!'  
@@ -156,7 +156,7 @@ if [ "$r_v" == "v" ]; then
     if [ "$run_install" == "run" ];then
 
         EditBoot
-        qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path &
+        qemu-system-x86_64 -m 2G -vga vmware --enable-kvm -net nic -net user,hostfwd=tcp::$NATPort-:5555 $disk_path -vnc :3 &
         {
             ip_android_v=`nc -lp $ListenPort`
             echo 'waiting for android boot !!!!!'  
