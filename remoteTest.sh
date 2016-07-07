@@ -15,14 +15,13 @@ testedPort="7022"
 testedFold=""
 
 localUser="aquan"
-localFold="/home/aquan/cts/cts-autotest/"
+localFold="/home/aquan/cts/cts-autotest"
 
 if [ -n "$1" ] ;then
     isoLoc=$1
-    scp -P $testingPort $isoLoc $testingUser@$testingIP:$testingFold
+    scp -P $testingPort $isoLoc $testingUser@$testingIP:$testingFold/android_x86_64-5.1.iso
 fi
 
-scp -P $testingPort  $localFold/testAll.sh $testingUser@$testingIP:$testingFold/cts-autotest/
+scp -P $testingPort $localFold/testAll.sh $testingUser@$testingIP:$testingFold/cts-autotest/
 ssh -p $testingPort $testingUser@$testingIP $testingFold/cts-autotest/testAll.sh
-#scp -P 11281 /home/oto/cts/android-cts/repository/results/*.zip /home/aquan/ 
 
