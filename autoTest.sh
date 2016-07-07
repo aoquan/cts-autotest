@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # install related tools and download related packages
 
 # run qemu
@@ -28,8 +28,7 @@
 ## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run cts "-p android.acceleration --disable-reboot"
 ## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run all "-p android.acceleration --disable-reboot"
 ## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run lkp 
-## eg: ./autoTest.sh v localhost /media/aquan/000D204000041550/android-x86.raw  installTest ../xyl_android_x86_64_5.1.iso "-p android.acceleration --disable-reboot"
-
+## eg: ./autoTest.sh v localhost /media/aquan/000D204000041550/android-x86.raw  installTest ../xyl_android_x86_64_5.1.iso "-p android.acceleration --disable-reboot" 
 
 cd "$(dirname "$0")"
 
@@ -191,7 +190,7 @@ elif [ "$r_v" == "r" ];then
         ip_android_r=`nc -lp $ListenPort`
         echo $ip_android_r
         adb connect $ip_android_r
-        sleep 2
+        wait
         echo 'waiting for android boot !!!!!' 
         adb -s $ip_android_r:5555 shell system/checkAndroidDesktop.sh
 
@@ -219,7 +218,7 @@ elif [ "$r_v" == "r" ];then
         #sleep 30
         echo ${ip_android}
         adb connect ${ip_android}
-        sleep 1
+        wait
         adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
 
         ##keep screen active

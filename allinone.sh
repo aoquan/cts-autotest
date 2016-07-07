@@ -17,4 +17,6 @@ adb -s $ip shell /data/local/tmp/ebizzy > $result/ebizzy/default/$host/$rootfs/$
 adb -s $ip shell /data/local/tmp/nbench > $result/nbench/default/$host/$rootfs/$kconfig/$cc/$kernel/$no/nbench.out
 adb -s $ip shell uiautomator runtest demo1.jar -c com.browser.demobrowser > $result/browser/default/$host/$rootfs/$kconfig/$cc/$kernel/$no/browser.out
 
-tar -cvf result.tar $result
+
+now=`date +%Y.%m.%d_%H.%M.%S`
+tar -cvf $now"result.tar" $result 
