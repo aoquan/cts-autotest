@@ -147,7 +147,7 @@ if [ "$r_v" == "v" ]; then
             adb -s localhost:$NATPort shell system/checkAndroidDesktop.sh
             sleep 5
             cts_cmd="$6"       
-            ./allinone.sh localhost:$NATPort 0
+            ./allinone.sh localhost:$NATPort
             echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
             adb -s localhost:$NATPort shell poweroff
         }
@@ -171,10 +171,10 @@ if [ "$r_v" == "v" ]; then
                 cts_cmd="$6"
                 echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
             elif [ "$testType" == "lkp" ];then
-                ./allinone.sh localhost:$NATPort 0
+                ./allinone.sh localhost:$NATPort
             elif [ "$testType" == "all" ];then
                 cts_cmd="$6"
-                ./allinone.sh localhost:$NATPort 0
+                ./allinone.sh localhost:$NATPort
                 echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
             fi
             adb -s localhost:$NATPort shell poweroff
@@ -200,10 +200,10 @@ elif [ "$r_v" == "r" ];then
             cts_cmd="$6"
             echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
         elif [ "$testType" == "lkp" ];then
-            ./allinone.sh $ip_android_r:5555 0
+            ./allinone.sh $ip_android_r:5555
         elif [ "$testType" == "all" ];then
             cts_cmd="$6"
-            ./allinone.sh $ip_android_r:5555 0
+            ./allinone.sh $ip_android_r:5555
             echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
         fi
 
@@ -240,7 +240,7 @@ elif [ "$r_v" == "r" ];then
         #sleep 5
         cts_cmd="$6"
         echo 'testing'
-        ./allinone.sh $ip_android:5555 0
+        ./allinone.sh $ip_android:5555
         echo "exit" | ../android-cts/tools/cts-tradefed run cts -s $ip_android:5555 $cts_cmd
         ###reboot to  linux
         ./android_fastboot.sh  ${ip_android}  reboot_bootloader
