@@ -1,7 +1,7 @@
 #!/bin/bash 
 cd "$(dirname "$0")" 
-./autoTest.sh r 192.168.0.70 /dev/sda40 run all "-p android.acceleration --disable-reboot" > testlog.txt 2>&1
-#./autoTest.sh r 192.168.0.70 /dev/sda40 installTest ../android_x86_64-5.1.iso "--plan CTS --disable-reboot"
+#./autoTest.sh r 192.168.0.70 /dev/sda40 run all "-p android.acceleration --disable-reboot" > testlog.txt 2>&1
+./autoTest.sh r 192.168.0.70 /dev/sda40 installTest ../android_x86_64-5.1.iso "--plan CTS --disable-reboot" > testlog.txt 2>&1
 #./autoTest.sh r 192.168.0.70 /dev/sda40 installTest ../android_x86_64-5.1.iso "-p android.acceleration --disable-reboot" > testlog.txt 2>&1
 
 
