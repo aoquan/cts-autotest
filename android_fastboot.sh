@@ -40,6 +40,7 @@ wait
 adb -s $1:5555 reboot &
 {
     sleep 1
-    pkill adb
+    #pkill adb
+    adb disconnect $1:5555
 }
 ###adb reboot can not normal exit, must ctrl+c, game over 

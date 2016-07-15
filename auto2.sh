@@ -21,14 +21,14 @@ echo ${ip_linux}
 
 ###copy  the android iso you want to test , to this dir
     
-cp  ${android_iso_for_test}  ./android_x86.iso
+#cp  ${android_iso_for_test}  ./android_x86.iso
 
 
 ####a small bug has fixed
 ssh root@${ip_linux} "rm -rf /root/android_auto/"
 ####a small bug has fixed
 
-./android_tool.sh ${ip_linux}  partition_disk.sh ${diskpart_for_android}
+./android_tool.sh ${ip_linux} ${android_iso_for_test} partition_disk.sh ${diskpart_for_android}
 
 ## add by aoquan
 #ssh root@${ip_linux} "~/android_auto/script/edit_init.sh ${ip_linux_host}"
@@ -42,12 +42,12 @@ ssh root@${ip_linux} "rm -rf /root/android_auto/"
 # echo "linux reboot done!"
 # sleep 5
 
-./android_tool.sh ${ip_linux}  android_x86_iso_install.sh ${diskpart_for_android} 
+./android_tool.sh ${ip_linux}  ${android_iso_for_test} android_x86_iso_install.sh ${diskpart_for_android} 
 
 ## add by aoquan
 ssh root@${ip_linux} "~/android_auto/scriptReboot2/reboot.sh $diskpart_for_android $ip_linux_host $ListenPort"
 sleep 2
 
-./android_tool.sh ${ip_linux}  android_x86_grub_install.py ${diskpart_for_android} 
+./android_tool.sh ${ip_linux}  ${android_iso_for_test} android_x86_grub_install.py ${diskpart_for_android} 
 
-./android_tool.sh ${ip_linux}  fastboot.sh  ${diskpart_for_android}  bios_reboot 
+./android_tool.sh ${ip_linux} ${android_iso_for_test} fastboot.sh  ${diskpart_for_android}  bios_reboot 

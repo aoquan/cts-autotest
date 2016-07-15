@@ -1,23 +1,22 @@
 #!/bin/bash -x
 cd "$(dirname "$0")" 
 port=52000
-
-if [ ! -d "~/android-cts" ]; then
-  	cp ../android-cts ~/ -r
-fi
-
+iso=$1
 while read line
-do
+do 
+    if [[ $line"x" == "x" ]];then 
+        break
+    fi
 	let port+=1
-	cp ../cts-autotest ~/cts-autotest"$port" -r
-	cmd="/autoTest.sh "
+	cmd="./autoTest.sh "
 	#cmd=$cmd"$line"" $port"
-	eval "~/cts-autotest$port$cmd $line $port" &
+	eval "$cmd $port $line" > testlog$port".txt" &
 	echo "done!"
-    #rm ~/cts-autotest"$port" -r
 done < configs
 
 wait
+pkill adb
+pkill nc
 exit
 
 

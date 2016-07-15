@@ -22,6 +22,7 @@ if [ -n "$1" ] ;then
     scp -P $testingPort $isoLoc $testingUser@$testingIP:$testingFold/android_x86_64-5.1.iso
 fi
 
-scp -P $testingPort $localFold/testAll.sh $testingUser@$testingIP:$testingFold/cts-autotest/
+rsync  -avz -e "ssh -p $testingPort" ./* $testingUser@$testingIP:$testingFold/cts-autotest/
+#scp -P $testingPort $localFold/testAll.sh $testingUser@$testingIP:$testingFold/cts-autotest/
 ssh -p $testingPort $testingUser@$testingIP $testingFold/cts-autotest/testAll.sh
 

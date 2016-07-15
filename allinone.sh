@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash -x
 result=/mnt/freenas/result
 testarg=default
 host=kvm
@@ -27,5 +27,5 @@ adb -s $ip shell /data/local/tmp/nbench > $result/nbench/default/$host/$rootfs/$
 adb -s $ip shell uiautomator runtest demo1.jar -c com.browser.demobrowser > $result/browser/default/$host/$rootfs/$kconfig/$cc/$kernel/$no/browser.out
 
 
-now=`date +%Y.%m.%d_%H.%M.%S`
-tar -cvf $now"result.tar" $result 
+#now=`date +%Y.%m.%d_%H.%M.%S`
+#tar -cvf $now"result.tar" $result 

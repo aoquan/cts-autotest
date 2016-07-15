@@ -28,4 +28,5 @@ result="cts/android-cts/repository/results/*.zip"
 [ -f /home/$testingUser/$result ] && scp -P $remotePort /home/$testingUser/$result $remoteUser@$remoteHost:$remoteFold
 [ -f /home/$testingUser/cts/cts-autotest/*result.tar ] && scp -P $remotePort /home/$testingUser/cts/cts-autotest/*result.tar $remoteUser@$remoteHost:$remoteFold
 
-rm /home/$testingUser/$result
+rm /home/$testingUser/cts/cts-autotest/*result.tar >> testlog.txt 2>&1
+rm /home/$testingUser/$result >> testlog.txt 2>&1

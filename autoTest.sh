@@ -10,38 +10,39 @@
 ## update-alternatives --config java
 
 ##########################################################################################################################
-## $1 : virtual mechine or real mechine (v/r)
-## $2 : ip of client linux system, if you test local android_x86, use localhost or 127.0.0.1
-## $3: path of disk(/dev/sda40) or virtual disk(../rawiso/android_x86.raw)
-## $4 : run android_x86(run) or install android_x86.iso(install), install and run the testcase(installTest)
-## if $4 == install || $4 == installTest
-    ## $5: location of android_x86.iso
-## if $4 == run
-    ## $5: type of test(lkp/cts/all)
-        ## if $5 == cts || $5 == all
-            ## $6: cts command that need to be excuted
-        ## if $5 == lkp
+## $1 : listen port(start from 52001)
+## $2 : virtual mechine or real mechine (v/r)
+## $3 : ip of client linux system, if you test local android_x86, use localhost or 127.0.0.1
+## $4: path of disk(/dev/sda40) or virtual disk(../rawiso/android_x86.raw)
+## $5 : run android_x86(run) or install android_x86.iso(install), install and run the testcase(installTest)
+## if $5 == install || $5 == installTest
+    ## $6: location of android_x86.iso
+## if $5 == run
+    ## $6: type of test(lkp/cts/all)
+        ## if $6 == cts || $6 == all
+            ## $7: cts command that need to be excuted
+        ## if $6 == lkp
             ## It's enough
 
-## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 install android_x86.iso
-## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 installTest android_x86.iso "-p android.acceleration --disable-reboot"
-## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run cts "-p android.acceleration --disable-reboot"
-## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run all "-p android.acceleration --disable-reboot"
-## eg: ./autoTest.sh r 192.168.2.16 /dev/sda40 run lkp 
-## eg: ./autoTest.sh v localhost /media/aquan/000D204000041550/android-x86.raw  installTest ../xyl_android_x86_64_5.1.iso "-p android.acceleration --disable-reboot" 
+## eg: ./autoTest.sh 52001 r 192.168.2.16 /dev/sda40 install android_x86.iso
+## eg: ./autoTest.sh 52001 r 192.168.2.16 /dev/sda40 installTest android_x86.iso "-p android.acceleration --disable-reboot"
+## eg: ./autoTest.sh 52001 r 192.168.2.16 /dev/sda40 run cts "-p android.acceleration --disable-reboot"
+## eg: ./autoTest.sh 52001 r 192.168.2.16 /dev/sda40 run all "-p android.acceleration --disable-reboot"
+## eg: ./autoTest.sh 52001 r 192.168.2.16 /dev/sda40 run lkp 
+## eg: ./autoTest.sh 52001 v localhost /media/aquan/000D204000041550/android-x86.raw  installTest ../xyl_android_x86_64_5.1.iso "-p android.acceleration --disable-reboot" 
 
 cd "$(dirname "$0")"
 
-r_v=$1
-ip_linux_client=$2
-disk_path=$3
-run_install=$4 
 
-## listening port, user should specify it when parallel tesing 
-# ListenPort=$7
-ListenPort=52001
+# listening port, user should specify it when parallel tesing 
+ListenPort=$1
+# ListenPort=52001
 NATPort=$(($ListenPort+100))
 
+r_v=$2
+ip_linux_client=$3
+disk_path=$4
+run_install=$5 
 
 ip_linux_host=`/sbin/ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|awk '{print $2}'|tr -d "addr:"`
 
@@ -108,7 +109,7 @@ EOF
 if [ "$r_v" == "v" ]; then
     if [ "$run_install" == "installTest" ] || [ "$run_install" == "install" ];then
         ## install iso and then test the android-x86
-        iso_loc=$5
+        iso_loc=$6
         ./fastboot_vir.sh $disk_path flashall $iso_loc;
         EditBoot
 
@@ -146,7 +147,7 @@ if [ "$r_v" == "v" ]; then
             sleep 2
             adb -s localhost:$NATPort shell system/checkAndroidDesktop.sh
             sleep 5
-            cts_cmd="$6"       
+            cts_cmd="$7"       
             ./allinone.sh localhost:$NATPort
             echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
             adb -s localhost:$NATPort shell poweroff
@@ -166,14 +167,14 @@ if [ "$r_v" == "v" ]; then
             adb -s localhost:$NATPort shell system/checkAndroidDesktop.sh
             sleep 5
         
-            testType=$5 
+            testType=$6 
             if [ "$testType" == "cts" ];then
-                cts_cmd="$6"
+                cts_cmd="$7"
                 echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
             elif [ "$testType" == "lkp" ];then
                 ./allinone.sh localhost:$NATPort
             elif [ "$testType" == "all" ];then
-                cts_cmd="$6"
+                cts_cmd="$7"
                 ./allinone.sh localhost:$NATPort
                 echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
             fi
@@ -195,14 +196,14 @@ elif [ "$r_v" == "r" ];then
         adb -s $ip_android_r:5555 shell system/checkAndroidDesktop.sh
 
         echo 'testing'
-        testType=$5
+        testType=$6
         if [ "$testType" == "cts" ];then
-            cts_cmd="$6"
+            cts_cmd="$7"
             echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
         elif [ "$testType" == "lkp" ];then
             ./allinone.sh $ip_android_r:5555
         elif [ "$testType" == "all" ];then
-            cts_cmd="$6"
+            cts_cmd="$7"
             ./allinone.sh $ip_android_r:5555
             echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
         fi
@@ -211,7 +212,7 @@ elif [ "$r_v" == "r" ];then
     
     elif [ "$run_install" == "installTest" ];then
         ## install android-x86 and then test
-        iso_loc=$5
+        iso_loc=$6
         ./auto2.sh $ip_linux_client $iso_loc $disk_path $ListenPort;
         ip_android=`nc -lp $ListenPort`
         echo "android boot success!"
@@ -238,7 +239,7 @@ elif [ "$r_v" == "r" ];then
         wait
         adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
         #sleep 5
-        cts_cmd="$6"
+        cts_cmd="$7"
         echo 'testing'
         ./allinone.sh $ip_android:5555
         echo "exit" | ../android-cts/tools/cts-tradefed run cts -s $ip_android:5555 $cts_cmd
@@ -247,7 +248,7 @@ elif [ "$r_v" == "r" ];then
 
     elif [ "$run_install" == "install" ];then
         ## install android-x86 and then test
-        iso_loc=$5
+        iso_loc=$6
         ./auto2.sh $ip_linux_client $iso_loc $disk_path $ListenPort;
         ip_android=`nc -lp $ListenPort`
         echo "android boot success!"
