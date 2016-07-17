@@ -62,4 +62,3 @@
 
 ###测试结果
 测试结果保存在/android-cts/repository/results/中
-gaorui
