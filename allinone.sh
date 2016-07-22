@@ -1,13 +1,16 @@
 #! /bin/bash -x
 result=/mnt/freenas/result
 testarg=default
-host=kvm
+host=$1
+host=${host%/*}
 rootfs=android
 kconfig=android_x86
 cc=gcc
-kernel=6.0
 
 ip=$1
+iso=$2
+tmp=${iso#*-}
+kernel=${tmp%-*}
 
 for i in {0..99}
 do 

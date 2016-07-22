@@ -46,6 +46,8 @@ run_install=$5
 
 ip_linux_host=`/sbin/ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|awk '{print $2}'|tr -d "addr:"`
 
+ip_android="0.0.0.0"
+iso_loc="default"
 #check whether the ip address
 function checkIP()
 {
@@ -71,10 +73,11 @@ function checkIP()
 
 checkIP $ip_linux_client
 
+
 function EditBoot()
 {
     if [ ! -d "android_disk" ]; then
-    mkdir  android_disk
+        mkdir  android_disk
     fi
     mount -o loop,offset=32256 $disk_path android_disk;
     ########################################
@@ -103,10 +106,19 @@ EOF
     umount android_disk;
 }
 
-
+function getCommitId()
+{
+    iso_loc=$1
+    iso=${iso_loc##*/}
+    tmp=${iso#*-}
+    commitId=${tmp%-*}
+    echo $commitId
+}
 
 ## according to where it's virtual mechine(qemu) or real mechine, we should change the network model
 if [ "$r_v" == "v" ]; then
+    ip_android="localhost"
+
     if [ "$run_install" == "installTest" ] || [ "$run_install" == "install" ];then
         ## install iso and then test the android-x86
         iso_loc=$6
@@ -130,6 +142,7 @@ if [ "$r_v" == "v" ]; then
             echo 'install CtsDeviceAdmin.apk!!!!!'
             adb -s $ip_linux_client:$NATPort install ../android-cts/repository/testcases/CtsDeviceAdmin.apk
             adb -s $ip_linux_client:$NATPort push device_policies.xml data/system/device_policies.xml
+            adb -s $ip_linux_client:$NATPORT push commitId.txt data/
             adb -s $ip_linux_client:$NATPort shell poweroff
         }
     fi
@@ -148,7 +161,11 @@ if [ "$r_v" == "v" ]; then
             adb -s localhost:$NATPort shell system/checkAndroidDesktop.sh
             sleep 5
             cts_cmd="$7"       
-            ./allinone.sh localhost:$NATPort
+
+            ### monitor script, if network is down, reboot to linux
+            ./testAliveSend.sh localhost $NATPort $r_v &
+
+            ./allinone.sh localhost:$NATPort $iso_loc
             echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd 
             adb -s localhost:$NATPort shell poweroff
         }
@@ -165,8 +182,14 @@ if [ "$r_v" == "v" ]; then
             adb connect localhost:$NATPort
             sleep 2
             adb -s localhost:$NATPort shell system/checkAndroidDesktop.sh
+	    tmp=`adb -s localhost:NATPort shell cat data/commitId.txt | grep commitId`
+	    commitId=${tmp##*:}
+            commitId=${commitId%?}
             sleep 5
         
+            ### monitor script, if network is down, reboot to linux
+            ./testAliveSend.sh localhost $NATPort $r_v &
+
             testType=$6 
             if [ "$testType" == "cts" ];then
                 cts_cmd="$7"
@@ -188,27 +211,35 @@ elif [ "$r_v" == "r" ];then
         rsync   -avz -e ssh ./scriptReboot1 root@${ip_linux_client}:~/;
         ssh root@${ip_linux_client} "~/scriptReboot1/reboot.sh $disk_path $ip_linux_host $ListenPort";
 
-        ip_android_r=`nc -lp $ListenPort`
-        echo $ip_android_r
-        adb connect $ip_android_r
+        ip_android=`nc -lp $ListenPort`
+        echo $ip_android
+        adb connect $ip_android
         wait
         echo 'waiting for android boot !!!!!' 
-        adb -s $ip_android_r:5555 shell system/checkAndroidDesktop.sh
+        adb -s $ip_android:5555 shell system/checkAndroidDesktop.sh
+
+        ### get commit id
+	tmp=`adb -s $ip_android:5555 shell cat data/commitId.txt | grep commitId`
+	commitId=${tmp##*:}
+        commitId=${commitId%?}
 
         echo 'testing'
+        ### monitor script, if network is down, reboot to linux
+        ./testAliveSend.sh $ip_android 5555 $r_v &
+
         testType=$6
         if [ "$testType" == "cts" ];then
             cts_cmd="$7"
             echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
         elif [ "$testType" == "lkp" ];then
-            ./allinone.sh $ip_android_r:5555
+            ./allinone.sh $ip_android:5555
         elif [ "$testType" == "all" ];then
             cts_cmd="$7"
-            ./allinone.sh $ip_android_r:5555
+            ./allinone.sh $ip_android:5555
             echo "exit" | ../android-cts/tools/cts-tradefed run cts $cts_cmd
         fi
 
-        ./android_fastboot.sh  $ip_android_r  reboot_bootloader
+        ./android_fastboot.sh  $ip_android  reboot_bootloader
     
     elif [ "$run_install" == "installTest" ];then
         ## install android-x86 and then test
@@ -227,6 +258,7 @@ elif [ "$r_v" == "r" ];then
         echo 'install CtsDeviceAdmin.apk!!!!!'
         adb -s $ip_android:5555 install ../android-cts/repository/testcases/CtsDeviceAdmin.apk
         adb -s $ip_android:5555 push device_policies.xml data/system/device_policies.xml
+	adb -s $ip_android:5555 push commitId.txt data/
         ./android_fastboot.sh  ${ip_android} bios_reboot 
 
         ##second boot 
@@ -241,7 +273,10 @@ elif [ "$r_v" == "r" ];then
         #sleep 5
         cts_cmd="$7"
         echo 'testing'
-        ./allinone.sh $ip_android:5555
+        ### monitor script, if network is down, reboot to linux
+        ./testAliveSend.sh $ip_android 5555 $r_v &
+
+        ./allinone.sh $ip_android:5555 $iso_loc
         echo "exit" | ../android-cts/tools/cts-tradefed run cts -s $ip_android:5555 $cts_cmd
         ###reboot to  linux
         ./android_fastboot.sh  ${ip_android}  reboot_bootloader
@@ -263,9 +298,31 @@ elif [ "$r_v" == "r" ];then
         echo 'install CtsDeviceAdmin.apk!!!!!'
         adb -s $ip_android:5555 install ../android-cts/repository/testcases/CtsDeviceAdmin.apk
         adb -s $ip_android:5555 push device_policies.xml data/system/device_policies.xml
+	adb -s $ip_android:5555 push commitId.txt data/
         sleep 1 
         echo "install finished!"
         ###reboot to  linux
         ./android_fastboot.sh  ${ip_android}  reboot_bootloader
     fi
 fi
+
+tmp=`find "testlog"$ListenPort".txt" | xargs grep -a "Created result dir"`
+#tmp=`grep -a "Created result dir" "testlog"$ListenPort".txt"`
+resultDirName=${tmp##* }
+
+if [ "$iso_loc" != "default" ];then
+    commitId=`getCommitId $iso_loc`
+fi
+echo $commitId
+### edit result, add commit id
+./addCommitId.sh $resultDirName $commitId
+
+ip_android=${ip_android##* }
+if [ $resultDirName"x" != "x" ];then
+    if [[ ! -d  /mnt/freenas/result/cts/default/$ip_android/android/android_x86/gcc/$commitId ]];then
+	mkdir -p /mnt/freenas/result/cts/default/$ip_android/android/android_x86/gcc/$commitId
+    fi
+    cp -r ../android-cts/repository/results/$resultDirName /mnt/freenas/result/cts/default/$ip_android/android/android_x86/gcc/$commitId
+fi
+wait
+exit

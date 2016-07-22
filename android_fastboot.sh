@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 adb connect $1
 wait

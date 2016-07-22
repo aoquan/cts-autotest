@@ -1,7 +1,15 @@
 #!/bin/bash -x
 cd "$(dirname "$0")" 
 port=52000
-iso=$1
+
+
+if [ -n "$1" ] ;then
+    iso=$1
+    tmp=${iso#*-}
+    commitId=${tmp%-*}
+    echo "commitId:$commitId" > commitId.txt
+fi
+
 while read line
 do 
     if [[ $line"x" == "x" ]];then 
@@ -17,6 +25,7 @@ done < configs
 wait
 pkill adb
 pkill nc
+
 exit
 
 
